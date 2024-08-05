@@ -1,15 +1,15 @@
 from rdkit import Chem
 import torch
-from dgllife.utils import *
-from dgllife.utils.featurizers import CanonicalAtomFeaturizer, CanonicalBondFeaturizer
-from ocelotml_2d.mlp_features import *
+#from dgllife.utils import *
+#from dgllife.utils.featurizers import CanonicalAtomFeaturizer, CanonicalBondFeaturizer
+from mlp_features import *
 #from mlp_features import *
 import json
-from ocelotml_2d.MPNN_evidential import  MPNNPredictor_evidential
-from ocelotml_2d.MPNN_readout import MPNN_readout
+from MPNN_evidential import  MPNNPredictor_evidential
+from MPNN_readout import MPNN_readout
 #from MPNN_evidential import  MPNNPredictor_evidential
 import dgl
-from ocelotml_2d.MolNet import MolNet
+from MolNet import MolNet
 
 DEVICE = 'cpu'
 
@@ -30,8 +30,19 @@ def simple_mlp_prediction(smiles, d):
     
     with open(d["params_file"], "r") as mpnnf:
         mpnn_params = json.load(mpnnf)
-    fp_ln = mpnn_params.pop("v_length")
-    mnet = MolNet(**mpnn_params)
+    if "v_length" in mpnn_params:
+        fp_ln = mpnn_params.pop("v_length")
+    mnet = MolNet(input_nodes=mpnn_params["input_nodes"],
+                  hidden_nodes=mpnn_params["hidden_nodes"],
+                  output_nodes=mpnn_params["output_nodes"],
+                  layers=mpnn_params["layers"],
+                  activator=mpnn_params["activator"],
+                  loss=mpnn_params["loss"],
+                  dev=mpnn_params["dev"],
+                  with_dropouts=mpnn_params["with_dropouts"],
+                  only_last_dropout=mpnn_params["only_last_dropout"],
+                  dropout_rate=mpnn_params["dropout_rate"])
+    
     mnet.load_state_dict(torch.load(d["chk_file"], map_location="cpu"))
     prediction = mlp_pred_from_smiles(mnet, smiles, fp_ln)
     return prediction
@@ -172,13 +183,14 @@ def model_input_from_smiles(smiles,concat_feats=None,fp=False, dft_descriptors=N
 
 # evaluate
 def evaluate(inputs, model):
+    import dgl.init as dginit
     g, feats, feats_dim = inputs
     g = g.to(DEVICE)
     ndata = g.ndata["hv"].to(DEVICE)
     edata = g.edata["he"].to(DEVICE)
     feats = feats.to(DEVICE)
-    g.set_n_initializer(dgl.init.zero_initializer)
-    g.set_e_initializer(dgl.init.zero_initializer)
+    g.set_n_initializer(dginit.zero_initializer)
+    g.set_e_initializer(dginit.zero_initializer)
 
     if feats_dim == 0:
         prediction = model(g, ndata, edata)

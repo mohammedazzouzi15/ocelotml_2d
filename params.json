@@ -1,0 +1,1 @@
+{"v_length": 696, "input_nodes": 962, "dropout_rate": 0.12612688859945623, "hidden_nodes": 2080, "layers": 3, "activator": "relu", "with_dropouts": true, "only_last_dropout": false, "loss": "mse", "output_nodes": 1, "dev": "cpu"}

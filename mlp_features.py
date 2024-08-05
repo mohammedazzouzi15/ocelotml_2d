@@ -70,7 +70,10 @@ triple = rdkit.Chem.rdchem.BondType.TRIPLE
 double = rdkit.Chem.rdchem.BondType.DOUBLE
 single = rdkit.Chem.rdchem.BondType.SINGLE
 aromatic = rdkit.Chem.rdchem.BondType.AROMATIC
-get_1024_morgan_bit = AllChem.GetMorganFingerprintAsBitVect
+from rdkit.Chem import rdFingerprintGenerator
+
+mfpgen  = rdFingerprintGenerator.GetMorganGenerator (radius=2,fpSize=1024)
+get_1024_morgan_bit = mfpgen.GetFingerprint
 to = Chem.MolToSmiles
 
 max_d = pd.read_csv("ocelotml_2d/normalized_feats.csv", index_col = 0)
@@ -158,7 +161,7 @@ def all_properties(mol):
 def molecule_descriptors(mol, fp=False):
     one = []
     if fp:
-        fingerprint = get_1024_morgan_bit(mol, 2, nBits = fp)
+        fingerprint = get_1024_morgan_bit(mol)
         array = np.zeros((0,), dtype=np.int8)
         DataStructs.ConvertToNumpyArray(fingerprint, array)
         one = array.tolist()
